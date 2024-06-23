@@ -86,10 +86,10 @@ else begin : GEN_TREE_COMPRESS0
             assign nxt_add_i [i*NXT_DW +: NXT_DW] = i_add_i[(GRP_N*3 + i)*DI_W +: DI_W] ;
         end
         else if (i<MOD_N + GRP_N) : GEN_SUM
-            assign nxt_add_i [i*NXT_DW +: NXT_DW] = sum_tmp[(MOD_N +i)*DI_W +: DI_W] ;
+            assign nxt_add_i [i*NXT_DW +: NXT_DW] = sum_tmp[(i - MOD_N)*DI_W +: DI_W] ;
         end
         else begin : GEN_CARRY
-            assign nxt_add_i [i*NXT_DW +: NXT_DW] = {carry_tmp [(MOD_N + i + GRP_N)*DI_W +: DI_W],{1'b0}} ;
+            assign nxt_add_i [i*NXT_DW +: NXT_DW] = {carry_tmp [(i - MOD_N - GRP_N)*DI_W +: DI_W],{1'b0}} ;
         end 
     end
 
