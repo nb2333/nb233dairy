@@ -30,23 +30,27 @@ def phy_paser (in_phy_map,phy_num) :
 
 
 def slotn_test (slotn,phy_bw_map,comb_bw,comb_real_bw) :
-    slot_bw  = comb_bw/slotn
+    slot_obw = comb_bw/slotn
     slot_rbw = comb_real_bw/slotn
 
     #--------------------------------#
     tot_rneed_slotn = 0
+    tot_oneed_slotn = 0
 
-    phy_rslotn_list = []
     
     phy_cfg = {}
 
+    phy_rcfg = {} #real bandwidth config
+    phy_ocfg = {} #original bandwidt config
+    
+    bw_fail = 0
     #total slot n according to real band width      
     for phy_id,phy_bw in phy_bw_map.items() :
-        phy_rslot_n  = 0
-        phy_speed_up = 0 
-
         phy_rbw = phy_bw [1]
-        phy_abw = phy_bw [0]
+        phy_obw = phy_bw [0]
+
+        phy_rslot_n  = 0
+        phy_rspeed_up = 0 
 
         if phy_rbw > 0 :
             if phy_rbw <= slot_rbw  :
@@ -56,20 +60,42 @@ def slotn_test (slotn,phy_bw_map,comb_bw,comb_real_bw) :
             else :
                 phy_rslot_n = int(phy_rbw/slot_rbw) + 1
             
-            phy_speed_up = phy_rslot_n*slot_rbw/phy_rbw
+            phy_rspeed_up = phy_rslot_n*slot_rbw/phy_rbw
             tot_rneed_slotn = tot_rneed_slotn  + phy_rslot_n
     
-        phy_rslotn_list.append(phy_rslot_n)
+        phy_rcfg [phy_id] = {}
+        phy_rcfg [phy_id] ['RBW']      = phy_rbw
+        phy_rcfg [phy_id] ['BW']       = phy_obw 
+        phy_rcfg [phy_id] ['RSLOT_N']  = phy_rslot_n
+        phy_rcfg [phy_id] ['SPEED_UP'] = "%.2f"% phy_rspeed_up
+  
+
+        #----------------------------------------------------#
+        
+        phy_oslot_n  = 0
+        phy_ospeed_up = 0 
+
+        if phy_obw > 0 :
+            if phy_obw <= slot_obw  :
+                phy_oslot_n = 1 
+            elif phy_obw%slot_obw == 0 :
+                phy_oslot_n = int(phy_obw/slot_obw)
+            else :
+                phy_oslot_n = int(phy_obw/slot_obw) + 1
+            
+            phy_speed_up = phy_oslot_n*slot_rbw/phy_rbw
+            tot_oneed_slotn = tot_oneed_slotn  + phy_oslot_n
     
-        phy_cfg [phy_id] = {}
-
-        phy_cfg [phy_id] ['RBW']      = phy_rbw
-        phy_cfg [phy_id] ['BW']       = phy_abw 
-        phy_cfg [phy_id] ['RSLOT_N']  = phy_rslot_n
-        phy_cfg [phy_id] ['SPEED_UP'] = "%.2f"% phy_speed_up
-
+        phy_ocfg [phy_id] = {}
+        phy_ocfg [phy_id] ['RBW']      = phy_obw
+        phy_ocfg [phy_id] ['BW']       = phy_obw 
+        phy_ocfg [phy_id] ['RSLOT_N']  = phy_oslot_n
+        phy_ocfg [phy_id] ['SPEED_UP'] = "%.2f"% phy_ospeed_up
+    
+    ###---------------------------------------------------#
     slotn_vld = 1
-
+    
+    #if 
     if tot_rneed_slotn > slotn :
         slotn_vld = 0
         
