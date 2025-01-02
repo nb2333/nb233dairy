@@ -83,9 +83,12 @@ def slotn_test (slotn,phy_bw_map,comb_bw,comb_real_bw) :
             else :
                 phy_oslot_n = int(phy_obw/slot_obw) + 1
             
-            phy_speed_up = phy_oslot_n*slot_rbw/phy_rbw
+            phy_ospeed_up = phy_oslot_n*slot_rbw/phy_rbw
             tot_oneed_slotn = tot_oneed_slotn  + phy_oslot_n
-    
+                
+            if phy_ospeed_up < 1:
+                bw_fail = 1
+
         phy_ocfg [phy_id] = {}
         phy_ocfg [phy_id] ['RBW']      = phy_obw
         phy_ocfg [phy_id] ['BW']       = phy_obw 
@@ -95,10 +98,13 @@ def slotn_test (slotn,phy_bw_map,comb_bw,comb_real_bw) :
     ###---------------------------------------------------#
     slotn_vld = 1
     
-    #if 
-    if tot_rneed_slotn > slotn :
+    if tot_oneed_slotn <= slotn and bw_fail == 0:
+        phy_cfg = phy_ocfg
+    elif tot_rneed_slotn > slotn :
         slotn_vld = 0
-        
+        phy_cfg = phy_rcfg
+    else :
+        phy_cfg = phy_rcfg
 
     slot_bw= float(comb_bw)/slotn
 
@@ -329,10 +335,10 @@ if len(cfg_eq_last_slotbw) == 0 :
 else:
     posb_cfg_list = cfg_eq_last_slotbw
 
-
+print(posb_cfg_list)
 posb_cfg = posb_cfg_list [0]
 
-print(posb_cfg)
+#print(posb_cfg)
 
 mapToCalendarTbl (TOTAL_SLOTN,posb_cfg)
 
