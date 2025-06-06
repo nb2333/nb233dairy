@@ -28,7 +28,7 @@ def phy_paser (in_phy_map,phy_num) :
 
     return phy_cfg_map
 
-
+#find the valid slotn,actually the max slot n is enough
 def slotn_test (slotn,phy_bw_map,comb_bw,comb_real_bw) :
     slot_obw = comb_bw/slotn
     slot_rbw = comb_real_bw/slotn
@@ -118,32 +118,32 @@ def search_slot_n (comb_bw, comb_rbw, phy_bw_map, comb_slot_n ) :
     phy_num = len(phy_bw_map)
     
 
-    for slot_num in range(comb_slot_n,phy_num,-1) :
-        #print(slot_num)
-        slotn_vld,slotn_rvld,slotn,slot_rbw,slot_bw,phy_cfg,phy_rcfg =slotn_test (slot_num,phy_bw_map,comb_bw,comb_rbw) 
-        
+    #for slot_num in range(comb_slot_n,phy_num,-1) :
+    #print(slot_num)
+    slotn_vld,slotn_rvld,slotn,slot_rbw,slot_bw,phy_cfg,phy_rcfg =slotn_test (comb_slot_n,phy_bw_map,comb_bw,comb_rbw) 
+    
 
-        if slotn_vld == 1 :
-        
-            scene_cfg = {}
+    if slotn_vld == 1 :
+    
+        scene_cfg = {}
 
-            scene_cfg['SLOT_N']   = slotn
-            scene_cfg['SLOT_RBW'] = slot_rbw
-            scene_cfg['SLOT_BW']  = slot_bw
-            scene_cfg['PHY_CFG']  = phy_cfg
+        scene_cfg['SLOT_N']   = slotn
+        scene_cfg['SLOT_RBW'] = slot_rbw
+        scene_cfg['SLOT_BW']  = slot_bw
+        scene_cfg['PHY_CFG']  = phy_cfg
 
-            phy_cfg_list.append(scene_cfg)
+        phy_cfg_list.append(scene_cfg)
 
-        if slotn_rvld == 1 :
-        
-            scene_cfg = {}
+    if slotn_rvld == 1 :
+    
+        scene_cfg = {}
 
-            scene_cfg['SLOT_N']   = slotn
-            scene_cfg['SLOT_RBW'] = slot_rbw
-            scene_cfg['SLOT_BW']  = slot_bw
-            scene_cfg['PHY_CFG']  = phy_rcfg
+        scene_cfg['SLOT_N']   = slotn
+        scene_cfg['SLOT_RBW'] = slot_rbw
+        scene_cfg['SLOT_BW']  = slot_bw
+        scene_cfg['PHY_CFG']  = phy_rcfg
 
-            #phy_cfg_list.append(scene_cfg)
+        #phy_cfg_list.append(scene_cfg)
 
     return phy_cfg_list
 
@@ -154,8 +154,6 @@ def mapToCalendarTbl (slot_n,phy_cfg) :
 
     slot_width = 0
     slot_m = slot_n
-
-
 
     while slot_m > 0: 
         slot_m = int(slot_m/10)
@@ -169,13 +167,14 @@ def mapToCalendarTbl (slot_n,phy_cfg) :
         slot_idx.append( str(i).rjust(slot_width,' ') )
 
         if i < work_slot_n :
-            slot_id_tbl.append( 'NA'.rjust(slot_width,' ') )
+            slot_id_tbl.append( 'NA' )
         else:
             slot_id_tbl.append( ' '.rjust(slot_width,' ') )            
 
     #print(slot_idx)
     #print(slot_id_tbl)
-    
+ 
+    #sort the phy as band width from big to small
     phy_sort_list = []
 
 
@@ -206,24 +205,33 @@ def mapToCalendarTbl (slot_n,phy_cfg) :
     #print("#================================================#")
     #print( phy_sort_list)
  
-    
+    print(phy_sort_list)
+    slot_gap_list = []
     for phy_1cfg in phy_sort_list :
         #print(phy_1cfg,slot_id_tbl)
         phy_id     = phy_1cfg [0]
         phy_slotn  = phy_1cfg [1]['RSLOT_N']
 
         #------------ TBD --------------------
-        slot_id_tbl = map1Phy(phy_id=phy_id.rjust(slot_width,' '),phy_slotn=phy_slotn,work_slot_n = work_slot_n,slot_id_tbl=slot_id_tbl)
+        slot_id_tbl,max_gap,min_gap = map1Phy(phy_id=phy_id.rjust(slot_width,' '),phy_slotn=phy_slotn,work_slot_n = work_slot_n,slot_id_tbl=slot_id_tbl)
+        slot_gap_list.append([phy_id,phy_slotn,max_gap,min_gap,max_gap-min_gap])
 
     #print(slot_idx)
-    print(slot_id_tbl,phy_cfg['SLOT_N'],phy_cfg['SLOT_BW'],phy_cfg['SLOT_RBW'])
+    print(slot_id_tbl)
+    print(phy_cfg['SLOT_N'],phy_cfg['SLOT_BW'],phy_cfg['SLOT_RBW'])
+    print(slot_gap_list)
 
 
 def map1Phy(phy_id,phy_slotn,work_slot_n,slot_id_tbl) :
-    slot_gap = int(work_slot_n/phy_slotn)
-
- 
+    #print(phy_id,phy_slotn,work_slot_n)
    
+    actual_slot_gap = work_slot_n/phy_slotn
+    slot_gap = int(actual_slot_gap)
+    slot_gap_decimal = actual_slot_gap - slot_gap
+
+    print('//=================================================//')
+    print(actual_slot_gap,slot_gap,slot_gap_decimal)
+    
     #find the first NA as slot bias
     slot_bias = 0
     for slot_id in slot_id_tbl :
@@ -232,26 +240,39 @@ def map1Phy(phy_id,phy_slotn,work_slot_n,slot_id_tbl) :
         else :
             slot_bias = slot_bias + 1
 
-    #print(work_slot_n,slot_gap,slot_bias)
+    slot_decimal_sum = 0
+    last_slot_id = 0
+    max_gap  = 0
+    min_gap  = work_slot_n
+    first_slot_pos = 0
+    max_slot_pos = 0
+    min_slot_pos = work_slot_n
 
-    slot_idx  = 0
-
-    #(slot_id_tbl)
-    
     for i in range(0,phy_slotn) :
+        if i == 0 :
+            slot_best = slot_bias 
+        else :
+            slot_decimal_sum = slot_decimal_sum + slot_gap_decimal
+            print(slot_decimal_sum)
+            slot_decimal_sum_dec = slot_decimal_sum - int(slot_decimal_sum)
+            
+            if  slot_decimal_sum_dec > 0.85 :
+                integer_of_dec = int(slot_decimal_sum) +1
+            elif  slot_decimal_sum_dec < -0.85 :
+                integer_of_dec = int(slot_decimal_sum) -1
+            else :
+                integer_of_dec = int(slot_decimal_sum)
 
-        slot_best = slot_idx*slot_gap + slot_bias 
+            slot_best = last_slot_id + slot_gap  + integer_of_dec
 
-        #print(slot_id_tbl)
-        #print(slot_best,slot_id_tbl[slot_best])
-        
-        if slot_best > work_slot_n :
-            #print(phy_id,phy_slotn,work_slot_n,slot_id_tbl)
-            slot_best = work_slot_n
+        #print(i,last_slot_id,slot_best)                 
+        #print(i,last_slot_id,slot_best)  
+        if slot_best > work_slot_n -1 :
+            slot_best = work_slot_n -1
 
-
+        slot_pos = 0
         if slot_id_tbl[slot_best] == 'NA' :
-            slot_id_tbl[slot_best] = phy_id
+            slot_pos = slot_best
         else :
             left_exit   = 0
             left_jitter = 1
@@ -276,22 +297,70 @@ def map1Phy(phy_id,phy_slotn,work_slot_n,slot_id_tbl) :
                 else:
                     right_jitter = right_jitter + 1
                     
-            if left_jitter <= right_jitter :
-                slot_id_tbl[left_pos] = phy_id
-            else :
-                slot_id_tbl[right_pos] = phy_id
-        
-        slot_idx = slot_idx + 1
 
-    return slot_id_tbl 
+            slot_decimal_sum_dec = slot_decimal_sum - integer_of_dec 
+ 
+            left_dec_sum  = abs(slot_decimal_sum_dec + left_jitter  + slot_gap_decimal )
+            right_dec_sum = abs(slot_decimal_sum_dec - right_jitter + slot_gap_decimal )
+            
+            
+            if left_dec_sum <right_dec_sum :
+                slot_pos = left_pos
+            else :
+                slot_pos = right_pos
+            
+
+        slot_id_tbl[slot_pos] = phy_id
+        
+        if i == 0 :
+            slot_gitter  = 0
+            first_slot_pos = slot_pos
+            
+            max_slot_pos = slot_pos 
+            min_slot_pos = slot_pos
+
+        else :
+            slot_gap_cur = slot_pos - last_slot_id
+            slot_gitter  = slot_gap_cur - slot_gap
+
+            if max_gap < slot_gap_cur :
+                max_gap = slot_gap_cur
+
+            if min_gap > slot_gap_cur :
+                min_gap = slot_gap_cur
+
+            if slot_pos > max_slot_pos :
+                max_slot_pos = slot_pos
+
+            if slot_pos < min_slot_pos :
+                min_slot_pos = slot_pos
+
+            
+        slot_decimal_sum =  slot_decimal_sum - slot_gitter
+        last_slot_id = slot_pos
+        
+    
+    if  phy_slotn == 1:
+        max_gap = work_slot_n
+        min_gap = work_slot_n
+    else :
+        slot_gap_cur = work_slot_n - 1 - max_slot_pos  + min_slot_pos
+
+        if max_gap < slot_gap_cur :
+            max_gap = slot_gap_cur
+
+        if min_gap > slot_gap_cur :
+            min_gap = slot_gap_cur
+    
+    return slot_id_tbl,max_gap,min_gap
 
 
 
 #comb parameter
-TOTAL_SLOTN = 32 
-COMB_BW     = 200
-COMB_DW     = 64*4
-COMB_FREQ   = 0.9
+TOTAL_SLOTN = 160 
+COMB_BW     = 1600
+COMB_DW     = 1600
+COMB_FREQ   = 1 
 PHY_N       = 32
 
 #real band width
@@ -302,7 +371,9 @@ comb_rbw_f = Fraction(int(COMB_RBW*100) ,100)
 slot_bw_list = [200,100,50,25,12.5,10]
 
 #in_phy_map = {'25,25.78125':'0,1,2,3,4,5,6,7'}
-in_phy_map = {'25,25.78125':'0,1,2,3','10,10.3125':'4,5,7','40,42.3':'6'}
+#in_phy_map = {'25,25.78125':'0,1,2,3','10,10.3125':'4,5,7','40,42.3':'6'}
+in_phy_map = {'300,300':'0,2','110,110':'3'}
+#in_phy_map = {'110,110':'3'}
 
 old_table_slotbw = '' 
 
