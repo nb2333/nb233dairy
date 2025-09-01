@@ -39,7 +39,7 @@ generate
 for(i=0;i<DIV_END_W;i=i+1) begin : GEN_QUAN
     logic [RES_W       -1:0] div_end_quan_vec_pre ;
     logic [TAIL_W      -1:0] div_end_quan__dec_vec_pre ;
-    assign div_end_quan_vec_pre     = i_div_end >> (i+1)                ;
+    assign div_end_quan_vec_pre     = i_div_end >> (DIV_END_W -1 -i)                ;
 
     if (i<TAIL_W)  begin  : GEN_I_STW
         assign div_end_quan_dec_vec_pre =  i_div_end [i:0] << (TAIL_W -1 -i) ;
